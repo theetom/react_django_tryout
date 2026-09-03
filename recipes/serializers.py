@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Recipe, RecipeIngredient, Category
-
+from reviews.models import Review
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="ingredient.name")
@@ -15,6 +15,10 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ["id", "name"]
 
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ["id", "comment", "grade", "timestamp"]
 
 class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(
@@ -23,6 +27,9 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
 
     categories = CategorySerializer(
+        many=True
+    )
+    reviews = ReviewSerializer(
         many=True
     )
 
@@ -36,4 +43,5 @@ class RecipeSerializer(serializers.ModelSerializer):
             "user",
             "ingredients",
             "categories",
+            "reviews",
         ]

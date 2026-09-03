@@ -1,9 +1,11 @@
+from urllib import request
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Recipe
-from .serializers import RecipeSerializer
+from .serializers import RecipeSerializer, ReviewSerializer
 
 
 @api_view(["GET", "POST"])
@@ -42,12 +44,42 @@ def recipe_list(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-@api_view(["GET"])
-def home(request):
-    return Response({
-        "message": "Recipe API is working!"
-    })
+@api_view(["GET", "POST"])
+def recipe_detail(request, recipe_name):
 
+    try:
+        recipe = Recipe.objects.get(title=recipe_name)
+    except Recipe.DoesNotExist:
+        return Response(
+            {"error": "Recipe not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if request.method == "GET":
+        serializer = RecipeSerializer(recipe)
+        return Response(serializer.data)
+
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": "You must be logged in to write a review."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        serializer = ReviewSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(
+                recipe=recipe,
+                user=request.user
+            )
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 """ import json
 
