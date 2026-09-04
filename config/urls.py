@@ -26,4 +26,6 @@ urlpatterns = [
 
     path("api/", include("recipes.urls")),
     path("api/recipes/", include("reviews.urls")),
+
+	path("api/", include("users.urls")),
 ]

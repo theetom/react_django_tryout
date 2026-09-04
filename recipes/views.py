@@ -4,82 +4,91 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Recipe
-from .serializers import RecipeSerializer, ReviewSerializer
-
+from .models import Recipe, Category, Ingredient
+from .serializers import RecipeSerializer, CategorySerializer, IngredientSerializer
+from reviews.serializers import ReviewSerializer
 
 @api_view(["GET", "POST"])
+def recipe_intake(request):
+	if request.method == "GET":
+		categories = Category.objects.all()
+		ingredients = Ingredient.objects.all()
+
+		return Response({
+			"categories" : CategorySerializer(categories, many=True).data,
+			"ingredients" : IngredientSerializer(ingredients, many=True).data,
+		})
+	
+	if request.method == "POST":
+
+		serializer = RecipeSerializer(
+			data=request.data
+		)
+
+		if serializer.is_valid():
+
+			serializer.save()
+
+			return Response(
+				serializer.data,
+				status=status.HTTP_201_CREATED
+			)
+
+		return Response(
+			serializer.errors,
+			status=status.HTTP_400_BAD_REQUEST
+		)
+
+@api_view(["GET"])
 def recipe_list(request):
 
-    # GET /api/recipes/
-    if request.method == "GET":
-        recipes = Recipe.objects.all()
+	# GET /api/recipes/
+	if request.method == "GET":
+		recipes = Recipe.objects.all()
 
-        serializer = RecipeSerializer(
-            recipes,
-            many=True
-        )
+		serializer = RecipeSerializer(
+			recipes,
+			many=True
+		)
 
-        return Response(serializer.data)
-
-
-    # POST /api/recipes/
-    if request.method == "POST":
-
-        serializer = RecipeSerializer(
-            data=request.data
-        )
-
-        if serializer.is_valid():
-
-            serializer.save()
-
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+		return Response(serializer.data)
 
 @api_view(["GET", "POST"])
 def recipe_detail(request, recipe_name):
 
-    try:
-        recipe = Recipe.objects.get(title=recipe_name)
-    except Recipe.DoesNotExist:
-        return Response(
-            {"error": "Recipe not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+	try:
+		recipe = Recipe.objects.get(title=recipe_name)
+	except Recipe.DoesNotExist:
+		return Response(
+			{"error": "Recipe not found"},
+			status=status.HTTP_404_NOT_FOUND
+		)
 
-    if request.method == "GET":
-        serializer = RecipeSerializer(recipe)
-        return Response(serializer.data)
+	if request.method == "GET":
+		serializer = RecipeSerializer(recipe)
+		return Response(serializer.data)
 
-    if request.method == "POST":
-        if not request.user.is_authenticated:
-            return Response(
-                {"error": "You must be logged in to write a review."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        serializer = ReviewSerializer(data=request.data)
+	if request.method == "POST":
+		if not request.user.is_authenticated:
+			return Response(
+				{"error": "You must be logged in to write a review."},
+				status=status.HTTP_401_UNAUTHORIZED
+			)
+		serializer = ReviewSerializer(data=request.data)
 
-        if serializer.is_valid():
-            serializer.save(
-                recipe=recipe,
-                user=request.user
-            )
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+		if serializer.is_valid():
+			serializer.save(
+				recipe=recipe,
+				user=request.user
+			)
+			return Response(
+				serializer.data,
+				status=status.HTTP_201_CREATED
+			)
+		return Response(
+			serializer.errors,
+			status=status.HTTP_400_BAD_REQUEST
+		)
 
 """ import json
 
@@ -91,7 +100,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 
 from .models import (
-    Recipe,
+	Recipe,
     Category,
     Ingredient,
     RecipeIngredient,

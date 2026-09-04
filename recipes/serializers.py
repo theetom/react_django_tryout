@@ -1,47 +1,47 @@
 from rest_framework import serializers
-from .models import Recipe, RecipeIngredient, Category
-from reviews.models import Review
+from .models import Recipe, RecipeIngredient, Category, Ingredient
+from reviews.serializers import ReviewSerializer
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source="ingredient.name")
+	name = serializers.CharField(source="ingredient.name")
 
-    class Meta:
-        model = RecipeIngredient
-        fields = ["name", "quantity", "unit"]
+	class Meta:
+		model = RecipeIngredient
+		fields = ["name", "quantity", "unit"]
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ["id", "name"]
+	class Meta:
+		model = Category
+		fields = ["id", "name"]
 
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ["id", "comment", "grade", "timestamp"]
+class IngredientSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Ingredient
+		fields = ["id", "name"]
 
 class RecipeSerializer(serializers.ModelSerializer):
-    ingredients = RecipeIngredientSerializer(
-        source="recipe_ingredients",
-        many=True
-    )
+	ingredients = RecipeIngredientSerializer(
+		source="recipe_ingredients",
+		many=True
+	)
 
-    categories = CategorySerializer(
-        many=True
-    )
-    reviews = ReviewSerializer(
-        many=True
-    )
+	categories = CategorySerializer(
+		many=True
+	)
+	reviews = ReviewSerializer(
+		many=True
+	)
 
-    class Meta:
-        model = Recipe
-        fields = [
-            "id",
-            "title",
-            "description",
-            "date_created",
-            "user",
-            "ingredients",
-            "categories",
-            "reviews",
-        ]
+	class Meta:
+		model = Recipe
+		fields = [
+			"id",
+			"title",
+			"description",
+			"date_created",
+			"user",
+			"ingredients",
+			"categories",
+			"reviews",
+		]
