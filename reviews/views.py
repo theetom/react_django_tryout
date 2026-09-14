@@ -4,7 +4,7 @@ from rest_framework import status
 
 from recipes.models import Recipe
 from .models import Review
-from recipes.serializers import RecipeSerializer
+# from recipes.serializers import RecipeSerializer
 from reviews.serializers import ReviewSerializer
 
 @api_view(["GET"])

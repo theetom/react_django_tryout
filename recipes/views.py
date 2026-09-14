@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Recipe, Category, Ingredient
-from .serializers import RecipeSerializer, CategorySerializer, IngredientSerializer
+from .serializers import RecipeSummarySerializer, RecipeDetailedSerializer, CategorySerializer, IngredientSerializer
 from reviews.serializers import ReviewSerializer
 
 @api_view(["GET", "POST"])
@@ -21,7 +21,7 @@ def recipe_intake(request):
 	
 	if request.method == "POST":
 
-		serializer = RecipeSerializer(
+		serializer = RecipeDetailedSerializer(
 			data=request.data
 		)
 
@@ -46,7 +46,7 @@ def recipe_list(request):
 	if request.method == "GET":
 		recipes = Recipe.objects.all()
 
-		serializer = RecipeSerializer(
+		serializer = RecipeSummarySerializer(
 			recipes,
 			many=True
 		)
@@ -65,7 +65,7 @@ def recipe_detail(request, recipe_name):
 		)
 
 	if request.method == "GET":
-		serializer = RecipeSerializer(recipe)
+		serializer = RecipeDetailedSerializer(recipe)
 		return Response(serializer.data)
 
 	if request.method == "POST":

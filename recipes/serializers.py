@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Recipe, RecipeIngredient, Category, Ingredient
+from .models import Recipe, RecipeIngredient, RecipeStep, Category, Ingredient
 from reviews.serializers import ReviewSerializer
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -8,6 +8,20 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = RecipeIngredient
 		fields = ["name", "quantity", "unit"]
+
+
+class RecipeIngredientNameSerializer(serializers.ModelSerializer):
+	name = serializers.CharField(source="ingredient.name")
+
+	class Meta:
+		model = RecipeIngredient
+		fields = ["name"]
+
+
+class RecipeStepSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = RecipeStep
+		fields = ["step_number", "instruction"]
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -20,7 +34,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 		model = Ingredient
 		fields = ["id", "name"]
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeDetailedSerializer(serializers.ModelSerializer):
 	ingredients = RecipeIngredientSerializer(
 		source="recipe_ingredients",
 		many=True
@@ -28,6 +42,10 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 	categories = CategorySerializer(
 		many=True
+	)
+	steps = RecipeStepSerializer(
+		many=True,
+		read_only=True
 	)
 	reviews = ReviewSerializer(
 		many=True
@@ -42,6 +60,42 @@ class RecipeSerializer(serializers.ModelSerializer):
 			"date_created",
 			"user",
 			"ingredients",
+			"steps",
 			"categories",
 			"reviews",
 		]
+
+
+class RecipeSummarySerializer(serializers.ModelSerializer):
+	ingredients = RecipeIngredientNameSerializer(
+		source="recipe_ingredients",
+		many=True,
+		read_only=True
+	)
+	categories = CategorySerializer(
+		many=True,
+		read_only=True
+	)
+	average_score = serializers.SerializerMethodField()
+	number_of_reviews = serializers.SerializerMethodField()
+
+	class Meta:
+		model = Recipe
+		fields = [
+			"id",
+			"title",
+			"ingredients",
+			"categories",
+			"average_score",
+			"number_of_reviews",
+		]
+
+	def get_average_score(self, recipe):
+		reviews = recipe.reviews.all()
+		if not reviews.exists():
+			return 0.0
+		return sum(review.grade for review in reviews) / reviews.count()
+
+	def get_number_of_reviews(self, recipe):
+		return recipe.reviews.count()
+
