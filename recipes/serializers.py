@@ -50,6 +50,8 @@ class RecipeDetailedSerializer(serializers.ModelSerializer):
 	reviews = ReviewSerializer(
 		many=True
 	)
+	average_score = serializers.SerializerMethodField()
+	number_of_reviews = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Recipe
@@ -63,7 +65,19 @@ class RecipeDetailedSerializer(serializers.ModelSerializer):
 			"steps",
 			"categories",
 			"reviews",
+			"average_score",
+			"number_of_reviews",
 		]
+
+	#  for all reviews
+	def get_average_score(self, recipe):
+		reviews = recipe.reviews.all()
+		if not reviews.exists():
+			return 0.0
+		return sum(review.grade for review in reviews) / reviews.count()
+
+	def get_number_of_reviews(self, recipe):
+		return recipe.reviews.count()
 
 
 class RecipeSummarySerializer(serializers.ModelSerializer):
@@ -90,12 +104,17 @@ class RecipeSummarySerializer(serializers.ModelSerializer):
 			"number_of_reviews",
 		]
 
+	# only for last month see views
 	def get_average_score(self, recipe):
+		if hasattr(recipe, "recent_average_score"):
+			return recipe.recent_average_score or 0.0
 		reviews = recipe.reviews.all()
 		if not reviews.exists():
 			return 0.0
 		return sum(review.grade for review in reviews) / reviews.count()
 
 	def get_number_of_reviews(self, recipe):
+		if hasattr(recipe, "recent_number_of_reviews"):
+			return recipe.recent_number_of_reviews
 		return recipe.reviews.count()
 

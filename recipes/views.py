@@ -1,5 +1,8 @@
 from urllib import request
+from datetime import timedelta
 
+from django.db.models import Avg, Count, Q
+from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -52,6 +55,30 @@ def recipe_list(request):
 		)
 
 		return Response(serializer.data)
+
+@api_view(["GET"])
+def recipe_landing_page(request):
+	cutoff = timezone.now() - timedelta(days=30)
+	recent_reviews = Q(reviews__timestamp__gte=cutoff)
+	recipes = Recipe.objects.filter(
+		recent_reviews
+	).annotate(
+		recent_average_score=Avg("reviews__grade", filter=recent_reviews),
+		recent_number_of_reviews=Count("reviews", filter=recent_reviews),
+	)
+
+	best_average = recipes.order_by(
+		"-recent_average_score", "-recent_number_of_reviews", "id"
+	)[:5]
+	best_average_ids = best_average.values_list("id", flat=True)
+	most_reviews = recipes.exclude(id__in=best_average_ids).order_by(
+		"-recent_number_of_reviews", "-recent_average_score", "id"
+	)[:5]
+
+	return Response({
+		"best_average": RecipeSummarySerializer(best_average, many=True).data,
+		"most_reviews": RecipeSummarySerializer(most_reviews, many=True).data,
+	})
 
 @api_view(["GET", "POST"])
 def recipe_detail(request, recipe_name):
